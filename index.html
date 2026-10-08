@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>For Nandhana — A Little Game</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#070711;--card:rgba(255,255,255,.08);--line:rgba(255,255,255,.13);--text:#fff;--muted:#b8b8c9;--pink:#ff5c9a;--violet:#9b7bff;--cyan:#64e8ff}
+body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+button{font:inherit}
+#app{min-height:100vh;position:relative;overflow:hidden}
+.bg{position:fixed;inset:0;z-index:-3;background:radial-gradient(circle at 20% 20%,rgba(155,123,255,.20),transparent 30%),radial-gradient(circle at 80% 70%,rgba(255,92,154,.15),transparent 32%),#070711}
+.stars,.stars:before,.stars:after{content:"";position:absolute;inset:-50%;background-image:radial-gradient(2px 2px at 20% 30%,#fff,transparent),radial-gradient(1px 1px at 70% 20%,#fff,transparent),radial-gradient(1.5px 1.5px at 40% 80%,#fff,transparent),radial-gradient(1px 1px at 85% 60%,#fff,transparent);background-size:280px 280px;opacity:.5;animation:drift 35s linear infinite}
+.stars:before{transform:scale(1.4);opacity:.22;animation-duration:55s}.stars:after{transform:scale(1.8);opacity:.12;animation-duration:75s}
+@keyframes drift{to{transform:translate3d(100px,80px,0)}}
+.screen{min-height:100vh;display:none;padding:28px 18px;align-items:center;justify-content:center}
+.screen.active{display:flex;animation:in .7s ease}
+@keyframes in{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.wrap{width:min(920px,100%);text-align:center}
+.eyebrow{letter-spacing:.22em;text-transform:uppercase;color:#aaaac0;font-size:11px;margin-bottom:18px}
+h1{font-family:"Playfair Display",serif;font-size:clamp(48px,10vw,96px);line-height:.95;margin-bottom:22px}
+h2{font-family:"Playfair Display",serif;font-size:clamp(35px,7vw,62px);margin-bottom:16px}
+p{color:var(--muted);line-height:1.7;font-size:16px}
+.hero p{max-width:620px;margin:0 auto 30px}
+.glow{color:#fff;text-shadow:0 0 30px rgba(255,92,154,.45)}
+.btn{border:1px solid var(--line);background:rgba(255,255,255,.08);color:#fff;border-radius:999px;padding:14px 24px;cursor:pointer;transition:.25s;backdrop-filter:blur(14px);margin:7px}
+.btn:hover{transform:translateY(-3px);background:rgba(255,255,255,.13);box-shadow:0 12px 40px rgba(0,0,0,.25)}
+.primary{background:linear-gradient(135deg,#ff5c9a,#9b7bff);border:0;font-weight:800}
+.gamebar{position:fixed;top:16px;left:16px;right:16px;z-index:5;display:none;justify-content:space-between;align-items:center}
+.badge{padding:8px 12px;border:1px solid var(--line);background:rgba(0,0,0,.25);backdrop-filter:blur(12px);border-radius:999px;font-size:12px}
+.progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--pink),var(--violet));width:0;z-index:10;transition:width .6s}
+.cardgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:28px 0}
+.card{padding:24px;border:1px solid var(--line);border-radius:22px;background:var(--card);backdrop-filter:blur(16px);cursor:pointer;min-height:150px;display:flex;flex-direction:column;justify-content:center;transition:.3s}
+.card:hover{transform:translateY(-6px) rotateX(2deg);border-color:rgba(255,255,255,.3)}
+.card .icon{font-size:32px;margin-bottom:12px}.card strong{font-size:15px}.card span{font-size:12px;color:var(--muted);margin-top:8px}
+.lock{font-size:76px;margin:15px 0;filter:drop-shadow(0 0 30px rgba(155,123,255,.5))}
+.puzzle{display:flex;justify-content:center;gap:10px;margin:24px 0;flex-wrap:wrap}
+.puzzle button{width:64px;height:64px;border-radius:18px;border:1px solid var(--line);background:var(--card);color:#fff;font-size:24px;cursor:pointer}
+.puzzle button:hover{background:rgba(255,255,255,.14)}
+.secret{display:none;margin:20px auto;max-width:650px;padding:22px;border:1px solid rgba(255,92,154,.35);border-radius:20px;background:rgba(255,92,154,.07)}
+.timeline{max-width:680px;margin:28px auto;text-align:left}
+.titem{padding:20px 22px;margin:12px 0;border-left:2px solid var(--pink);background:rgba(255,255,255,.05);border-radius:0 18px 18px 0}
+.titem b{display:block;margin-bottom:6px}
+.titem small{color:#858599}
+.type{min-height:100px;display:flex;align-items:center;justify-content:center;font-family:"Playfair Display",serif;font-size:clamp(24px,5vw,42px)}
+.choice{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:25px}
+.choice .btn{min-width:190px}
+#heartCanvas{position:fixed;inset:0;pointer-events:none;z-index:20}
+.footer{position:fixed;bottom:12px;left:0;right:0;text-align:center;color:#66667a;font-size:10px;letter-spacing:.08em}
+@media(max-width:650px){.cardgrid{grid-template-columns:1fr}.screen{padding:70px 16px 50px}h1{font-size:58px}.choice .btn{width:100%;max-width:300px}}
+</style>
+</head>
+<body>
+<div id="app">
+<div class="bg"><div class="stars"></div></div>
+<canvas id="heartCanvas"></canvas>
+<div class="progress" id="progress"></div>
+<div class="gamebar" id="gamebar"><span class="badge">NANDHANA // PLAYER</span><span class="badge">XP <b id="xp">0</b></span></div>
+
+<section class="screen active" id="s0">
+<div class="wrap hero">
+<div class="eyebrow">A tiny game made for one person</div>
+<h1 class="glow">Hey, Nandhana.</h1>
+<p>There is a little story I wanted to tell you. But instead of just telling it… I made you a game.</p>
+<button class="btn primary" onclick="startGame()">START THE GAME ✦</button>
+</div>
+</section>
+
+<section class="screen" id="s1">
+<div class="wrap">
+<div class="eyebrow">LEVEL 01 / THE BEGINNING</div>
+<h2>The Camp</h2>
+<p>There was a camp. You were there. I was there.</p>
+<div class="card" style="max-width:420px;margin:24px auto;cursor:default;overflow:hidden;padding:0">
+<img src="assets/khalid.jpg" alt="Khalid" onclick="xpAdd(15);toast('Aiyoo yo 😭❤️ You found a secret.')" style="display:block;width:100%;height:360px;object-fit:cover;object-position:center top;cursor:pointer">
+<div style="padding:18px">
+<strong style="font-size:17px">PLAYER 01 — KHALID</strong>
+<span style="display:block;margin-top:8px">The person who decided a game was easier than saying all of this in one message. 😅</span>
+</div>
+</div>
+<div class="timeline">
+<div class="titem"><b>Day 01 — Same place.</b><span>Two people in the same story… without a conversation.</span></div>
+<div class="titem"><b>Then life moved on.</b><span>And somehow, the story wasn't finished yet.</span></div>
+<div class="titem"><b>Two months later — Instagram.</b><span>One conversation changed the entire timeline.</span></div>
+</div>
+<button class="btn primary" onclick="next(2,20)">CONTINUE →</button>
+</div>
+</section>
+
+<section class="screen" id="s2">
+<div class="wrap">
+<div class="eyebrow">LEVEL 02 / THE UNEXPECTED PART</div>
+<h2>One Message Became Many</h2>
+<p>What started on Instagram slowly became something I looked forward to every night.</p>
+<div class="cardgrid">
+<div class="card" onclick="reveal(this,10)"><div class="icon">🌙</div><strong>Every night</strong><span>There was always something to talk about.</span></div>
+<div class="card" onclick="reveal(this,10)"><div class="icon">💬</div><strong>Every conversation</strong><span>Somehow lasted longer than planned.</span></div>
+<div class="card" onclick="reveal(this,10)"><div class="icon">✨</div><strong>And then...</strong><span>Talking to you became my favorite part.</span></div>
+</div>
+<div id="nandhanaCard" class="card" style="max-width:430px;margin:24px auto;cursor:default;display:none;overflow:hidden;padding:0">
+<img src="assets/nandhana.jpg" alt="Nandhana" style="display:block;width:100%;height:430px;object-fit:cover;object-position:center 25%">
+<div style="padding:18px">
+<strong style="font-size:17px">MYSTERY PLAYER — NANDHANA</strong>
+<span style="display:block;margin-top:8px">The person this entire little game was secretly made for. ✦</span>
+</div>
+</div>
+<p id="hint">Tap all three cards to unlock the next level.</p>
+<button class="btn primary" id="next2" style="display:none" onclick="next(3,30)">UNLOCK LEVEL 03 →</button>
+</div>
+</section>
+
+<section class="screen" id="s3">
+<div class="wrap">
+<div class="eyebrow">LEVEL 03 / THE SECRET</div>
+<h2>Everything About Her</h2>
+<p>There isn't one single reason. It's the collection of a thousand little things.</p>
+<div class="cardgrid">
+<div class="card" onclick="xpAdd(10);toast('Her way of talking ✦')"><div class="icon">🫶</div><strong>The way you are</strong><span>Not something I can explain in one sentence.</span></div>
+<div class="card" onclick="xpAdd(10);toast('The little moments ✦')"><div class="icon">🌷</div><strong>The little things</strong><span>The things you might not even notice about yourself.</span></div>
+<div class="card" onclick="xpAdd(10);toast('The night conversations ✦')"><div class="icon">🌌</div><strong>The conversations</strong><span>Especially the ones that made time disappear.</span></div>
+</div>
+<button class="btn primary" onclick="next(4,50)">FIND THE SECRET →</button>
+</div>
+</section>
+
+<section class="screen" id="s4">
+<div class="wrap">
+<div class="eyebrow">LEVEL 04 / LOCKED</div>
+<h2>The Question</h2>
+<div class="lock" id="lock">🔐</div>
+<p>Three symbols. One secret. Put them in the right order.</p>
+<div class="puzzle">
+<button onclick="pick(0,this)">🌙</button><button onclick="pick(1,this)">📷</button><button onclick="pick(2,this)">💗</button>
+<button onclick="pick(3,this)">⭐</button><button onclick="pick(4,this)">💬</button><button onclick="pick(5,this)">🌷</button>
+</div>
+<p id="sequence">Sequence: —</p>
+<div class="secret" id="secret">
+<strong>ACCESS GRANTED ✨</strong>
+<p style="margin-top:8px">The answer was never hidden in the game. It was hidden in the reason I made it.</p>
+</div>
+<button class="btn primary" id="next4" style="display:none" onclick="next(5,70)">OPEN THE FINAL LEVEL →</button>
+</div>
+</section>
+
+<section class="screen" id="s5">
+<div class="wrap">
+<div class="eyebrow">FINAL LEVEL / NO MORE HIDING</div>
+<div class="type" id="type"></div>
+<p id="finalSub" style="max-width:620px;margin:20px auto 0"></p>
+<button class="btn primary" id="revealBtn" onclick="revealFinal()" style="display:none">ONE LAST THING →</button>
+</div>
+</section>
+
+<section class="screen" id="s6">
+<div class="wrap">
+<div class="eyebrow">ACHIEVEMENT UNLOCKED</div>
+<div style="font-size:70px;margin:8px">🏆</div>
+<h2>Nandhana, I Like You.</h2>
+<p style="max-width:650px;margin:auto">I don't know exactly what you feel, and I don't want to put pressure on you. I just wanted to be honest about what these conversations have come to mean to me.</p>
+<div class="card" style="max-width:650px;margin:28px auto;cursor:default">
+<strong style="font-size:18px">From a camp where we barely spoke…</strong>
+<span style="font-size:15px">to two months later, finding each other on Instagram…<br>to all those night conversations…<br>somewhere along the way, you became really special to me.</span>
+</div>
+<h2 class="glow" style="font-size:clamp(30px,6vw,54px)">Would you give this a chance? ❤️</h2>
+<div class="choice">
+<button class="btn primary" onclick="ending('yes')">YES, LET'S SEE ❤️</button>
+<button class="btn" onclick="ending('time')">I NEED SOME TIME 🌷</button>
+</div>
+</div>
+</section>
+
+<section class="screen" id="s7">
+<div class="wrap">
+<div style="font-size:65px">💖</div>
+<h2 id="endTitle"></h2>
+<p id="endText" style="max-width:650px;margin:auto"></p>
+<div class="card" style="max-width:650px;margin:30px auto;cursor:default">
+<strong>Achievement: The Girl Who Made Khalid Brave Enough To Confess</strong>
+<span>There was only one player this game was ever made for.</span>
+</div>
+</div>
+</section>
+
+<div class="footer">MADE WITH COURAGE • KHALID → NANDHANA</div>
+</div>
+
+<script>
+let current=0,xp=0,revealed=0,sequence=[];
+const screens=[...document.querySelectorAll('.screen')];
+function show(n){screens.forEach((s,i)=>s.classList.toggle('active',i===n));current=n;document.getElementById('progress').style.width=(n/7*100)+'%';window.scrollTo({top:0,behavior:'smooth'});}
+function next(n,gain){xpAdd(gain);show(n)}
+function startGame(){document.getElementById('gamebar').style.display='flex';xpAdd(5);show(1)}
+function xpAdd(n){xp+=n;document.getElementById('xp').textContent=xp}
+function reveal(el,n){if(!el.dataset.r){el.dataset.r=1;revealed++;xpAdd(n);el.style.borderColor='rgba(255,92,154,.55)';el.querySelector('span').textContent='Unlocked ✦ '+el.querySelector('span').textContent;if(revealed===3){document.getElementById('hint').textContent='LEVEL UNLOCKED ✨';document.getElementById('nandhanaCard').style.display='flex';document.getElementById('next2').style.display='inline-block';xpAdd(15);toast('A hidden player has been revealed ✦')}}}
+function toast(t){const d=document.createElement('div');d.textContent=t;d.style.cssText='position:fixed;left:50%;bottom:35px;transform:translateX(-50%);padding:12px 18px;border:1px solid rgba(255,255,255,.2);background:rgba(10,10,20,.85);backdrop-filter:blur(12px);border-radius:999px;z-index:50';document.body.appendChild(d);setTimeout(()=>d.remove(),1200)}
+function pick(i,b){if(sequence.includes(i))return;sequence.push(i);b.style.borderColor='rgba(255,92,154,.8)';document.getElementById('sequence').textContent='Sequence: '+sequence.map(x=>['🌙','📷','💗','⭐','💬','🌷'][x]).join('  ');if(sequence.length===3){if(sequence.join(',')==='1,4,2'){xpAdd(30);document.getElementById('lock').textContent='🔓';document.getElementById('secret').style.display='block';document.getElementById('next4').style.display='inline-block'}else{toast('Not quite… try another combination ✦');sequence=[];document.getElementById('sequence').textContent='Sequence: —';document.querySelectorAll('.puzzle button').forEach(x=>x.style.borderColor='')}}}
+const lines=["Okay… enough hiding behind a game.","There is something I have wanted to tell you.","It started with a camp.","Then, two months later… Instagram.","And somehow, the night conversations became my favorite part of the day.","So, Nandhana…"];
+function typeLines(i=0){if(i<lines.length){document.getElementById('type').textContent=lines[i];setTimeout(()=>typeLines(i+1),1700)}else{document.getElementById('revealBtn').style.display='inline-block'}}
+function revealFinal(){xpAdd(50);show(6);setTimeout(()=>hearts(),300)}
+function ending(which){show(7);if(which==='yes'){document.getElementById('endTitle').textContent='Then maybe… let’s start our story. ❤️';document.getElementById('endText').textContent='No perfect beginning. No perfect script. Just two people who somehow found their way from one camp to late-night conversations — and maybe, to something more.';hearts(90)}else{document.getElementById('endTitle').textContent='Take all the time you need. 🌷';document.getElementById('endText').textContent='Seriously. No pressure. I’m just happy I was brave enough to tell you. Whatever your answer, I’ll always be glad that our conversations happened.';hearts(25)}}
+function hearts(count=45){const c=document.getElementById('heartCanvas'),ctx=c.getContext('2d');c.width=innerWidth;c.height=innerHeight;let a=[...Array(count)].map(()=>({x:Math.random()*c.width,y:c.height+Math.random()*200,s:8+Math.random()*15,v:1+Math.random()*2,o:.8+Math.random()*.2}));function f(){ctx.clearRect(0,0,c.width,c.height);a.forEach(h=>{h.y-=h.v;ctx.globalAlpha=h.o;ctx.font=h.s+'px serif';ctx.fillText('♥',h.x,h.y)});a=a.filter(h=>h.y>-30);if(a.length)requestAnimationFrame(f)}f()}
+function openFinal(){show(5);typeLines()}
+const oldNext=next; // keep API simple
+document.querySelectorAll('#s4 .puzzle button').forEach(b=>b.addEventListener('click',()=>{}));
+document.getElementById('next4').onclick=openFinal;
+</script>
+</body>
+</html>
